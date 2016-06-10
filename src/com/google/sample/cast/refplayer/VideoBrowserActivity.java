@@ -40,13 +40,12 @@ import com.google.sample.cast.refplayer.settings.CastPreference;
 public class VideoBrowserActivity extends AppCompatActivity {
 
     private static final String TAG = "VideoBrowserActivity";
-    private VideoCastManager mCastManager;
-    private VideoCastConsumer mCastConsumer;
+    private VideoCastManager castManager;
+    private VideoCastConsumer castConsumer;
 	/** Menu item, click on which connects, disconnects from Cast */
     private MenuItem castMenuItem;
-    private boolean mIsHoneyCombOrAbove = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
-    private Toolbar mToolbar;
-    private IntroductoryOverlay mOverlay;
+    private boolean isHoneyCombOrAbove = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
+	private IntroductoryOverlay overlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,8 +62,8 @@ public class VideoBrowserActivity extends AppCompatActivity {
 	 * item, etc.
 	 * */
 	private void setupGoogleCast() {
-		mCastManager = VideoCastManager.getInstance();
-		mCastConsumer = new VideoCastConsumerImpl() {
+		castManager = VideoCastManager.getInstance();
+		castConsumer = new VideoCastConsumerImpl() {
 
 			@Override
 			public void onFailed(int resourceId, int statusCode) {
@@ -101,7 +100,7 @@ public class VideoBrowserActivity extends AppCompatActivity {
 
 			@Override
 			public void onCastAvailabilityChanged(boolean castPresent) {
-				if (castPresent && mIsHoneyCombOrAbove) {
+				if (castPresent && isHoneyCombOrAbove) {
 					showOverlay();
 				}
 			}
@@ -109,9 +108,9 @@ public class VideoBrowserActivity extends AppCompatActivity {
 	}
 
 	private void setupActionBar() {
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
-        mToolbar.setTitle(R.string.app_name);
-        setSupportActionBar(mToolbar);
+		final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setTitle(R.string.app_name);
+        setSupportActionBar(toolbar);
     }
 
     @Override
@@ -119,7 +118,7 @@ public class VideoBrowserActivity extends AppCompatActivity {
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.browse, menu);
 
-        castMenuItem = mCastManager.addMediaRouterButton(menu, R.id.media_route_menu_item);
+        castMenuItem = castManager.addMediaRouterButton(menu, R.id.media_route_menu_item);
 
         return true;
     }
@@ -131,7 +130,7 @@ public class VideoBrowserActivity extends AppCompatActivity {
     }
 
 	private void updateQueueMenuItem(final Menu menu) {
-		menu.findItem(R.id.action_show_queue).setVisible(mCastManager.isConnected());
+		menu.findItem(R.id.action_show_queue).setVisible(castManager.isConnected());
 	}
 
 	@Override
@@ -154,14 +153,14 @@ public class VideoBrowserActivity extends AppCompatActivity {
 	/** Shows UI overlay to the user, helping them to discover Cast menu item */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void showOverlay() {
-		if(mOverlay != null) {
-            mOverlay.remove();
+		if(overlay != null) {
+            overlay.remove();
         }
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 if (castMenuItem.isVisible()) {
-                    mOverlay = new IntroductoryOverlay.Builder(VideoBrowserActivity.this)
+                    overlay = new IntroductoryOverlay.Builder(VideoBrowserActivity.this)
                             .setMenuItem(castMenuItem)
                             .setTitleText(R.string.intro_overlay_text)
                             .setSingleTime()
@@ -169,11 +168,11 @@ public class VideoBrowserActivity extends AppCompatActivity {
                                 @Override
                                 public void onOverlayDismissed() {
                                     Log.d(TAG, "overlay is dismissed");
-                                    mOverlay = null;
+                                    overlay = null;
                                 }
                             })
                             .build();
-                    mOverlay.show();
+                    overlay.show();
                 }
             }
         }, 1000 /* millis */ );
@@ -181,17 +180,18 @@ public class VideoBrowserActivity extends AppCompatActivity {
 
     @Override
     public boolean dispatchKeyEvent(@NonNull KeyEvent event) {
-        return mCastManager.onDispatchVolumeKeyEvent(event, CastApplication.VOLUME_INCREMENT)
+		/* passes volume key presses to Cast */
+        return castManager.onDispatchVolumeKeyEvent(event, CastApplication.VOLUME_INCREMENT)
                 || super.dispatchKeyEvent(event);
     }
 
     @Override
     protected void onResume() {
         Log.d(TAG, "onResume() was called");
-        mCastManager = VideoCastManager.getInstance();
-        if (null != mCastManager) {
-            mCastManager.addVideoCastConsumer(mCastConsumer);
-            mCastManager.incrementUiCounter();
+        castManager = VideoCastManager.getInstance();
+        if (null != castManager) {
+            castManager.addVideoCastConsumer(castConsumer);
+            castManager.incrementUiCounter();
         }
 
         super.onResume();
@@ -199,8 +199,8 @@ public class VideoBrowserActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        mCastManager.decrementUiCounter();
-        mCastManager.removeVideoCastConsumer(mCastConsumer);
+        castManager.decrementUiCounter();
+        castManager.removeVideoCastConsumer(castConsumer);
         super.onPause();
     }
 
