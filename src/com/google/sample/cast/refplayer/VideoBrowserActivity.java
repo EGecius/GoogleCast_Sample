@@ -43,18 +43,13 @@ public class VideoBrowserActivity extends AppCompatActivity {
     private VideoCastManager mCastManager;
     private VideoCastConsumer mCastConsumer;
 	/** Menu item, click on which connects, disconnects from Cast */
-    private MenuItem mMediaRouteMenuItem;
+    private MenuItem castMenuItem;
     private boolean mIsHoneyCombOrAbove = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB;
     private Toolbar mToolbar;
     private IntroductoryOverlay mOverlay;
 
-    /*
-     * (non-Javadoc)
-     * @see android.support.v4.app.FragmentActivity#onCreate(android.os.Bundle)
-     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
 		super.onCreate(savedInstanceState);
         VideoCastManager.checkGooglePlayServices(this);
         setContentView(R.layout.video_browser);
@@ -124,18 +119,22 @@ public class VideoBrowserActivity extends AppCompatActivity {
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.browse, menu);
 
-        mMediaRouteMenuItem = mCastManager.addMediaRouterButton(menu, R.id.media_route_menu_item);
+        castMenuItem = mCastManager.addMediaRouterButton(menu, R.id.media_route_menu_item);
 
         return true;
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.findItem(R.id.action_show_queue).setVisible(mCastManager.isConnected());
-        return super.onPrepareOptionsMenu(menu);
+		updateQueueMenuItem(menu);
+		return super.onPrepareOptionsMenu(menu);
     }
 
-    @Override
+	private void updateQueueMenuItem(final Menu menu) {
+		menu.findItem(R.id.action_show_queue).setVisible(mCastManager.isConnected());
+	}
+
+	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
 		Intent i;
@@ -152,17 +151,18 @@ public class VideoBrowserActivity extends AppCompatActivity {
         return true;
     }
 
+	/** Shows UI overlay to the user, helping them to discover Cast menu item */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void showOverlay() {
-        if(mOverlay != null) {
+		if(mOverlay != null) {
             mOverlay.remove();
         }
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (mMediaRouteMenuItem.isVisible()) {
+                if (castMenuItem.isVisible()) {
                     mOverlay = new IntroductoryOverlay.Builder(VideoBrowserActivity.this)
-                            .setMenuItem(mMediaRouteMenuItem)
+                            .setMenuItem(castMenuItem)
                             .setTitleText(R.string.intro_overlay_text)
                             .setSingleTime()
                             .setOnDismissed(new IntroductoryOverlay.OnOverlayDismissedListener() {
@@ -176,7 +176,7 @@ public class VideoBrowserActivity extends AppCompatActivity {
                     mOverlay.show();
                 }
             }
-        }, 1000);
+        }, 1000 /* millis */ );
     }
 
     @Override
