@@ -1,0 +1,89 @@
+/*
+ * Copyright (C) 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import com.android.builder.core.DefaultManifestParser
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.1.2'
+    }
+}
+
+repositories {
+    jcenter()
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+apply plugin: 'com.android.application'
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.3"
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+        }
+    }
+
+    defaultConfig {
+        minSdkVersion 10
+        targetSdkVersion 23
+        applicationId="com.google.sample.cast.refplayer"
+        def manifestParser = new DefaultManifestParser()
+        versionName = manifestParser.getVersionName(android.sourceSets.main.manifest.srcFile)
+        versionCode = manifestParser.getVersionCode(android.sourceSets.main.manifest.srcFile)
+    }
+
+    aaptOptions {
+        additionalParameters "--no-version-vectors"
+    }
+        
+    lintOptions {
+      abortOnError false
+    }
+
+    buildTypes {
+        debug {
+            applicationVariants.all { variant ->
+                variant.outputs.each { output ->
+                    output.outputFile = new File(output.outputFile.parent, output.outputFile.name.
+                            replace(".apk", "-" + defaultConfig.versionName + ".apk"))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * An alternate approach to include CCL as a library from jCenter repo is:
+
+ (1) remove settings.gradle
+ (2) use the following set of dependencies (note that you would need to include support and Play
+ Service dependencies explicitly):
+
+ **/
+
+ dependencies {
+     compile files('libs/android-query.0.25.10.jar')
+     compile 'com.google.android.libraries.cast.companionlibrary:ccl:2.8.4'
+     compile 'com.android.support:recyclerview-v7:23.4.0'
+ }
